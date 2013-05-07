@@ -62,6 +62,7 @@ class TaskitActivity
 
   class TaskItAdapter < android.widget.BaseAdapter
       TAG2 = "TaskItAdapter"
+
     def initialize(context, data)
       Log.d(TAG2, "****************************************************************************")
       Log.d(TAG2, "****************************************************************************")
