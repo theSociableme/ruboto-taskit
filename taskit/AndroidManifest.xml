@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='UTF-8'?> 
+<manifest package='com.quicsystems.ruboto.taskit' android:versionCode='1' android:versionName='1.0' xmlns:android='http://schemas.android.com/apk/res/android'>
+    <uses-permission android:name='android.permission.INTERNET'/>
+    <uses-permission android:name='android.permission.READ_EXTERNAL_STORAGE'/>
+    <uses-permission android:name='android.permission.WRITE_EXTERNAL_STORAGE'/>
+    <uses-permission android:name='android.permission.ACCESS_NETWORK_STATE'/>
+    <application android:icon='@drawable/ic_launcher' android:label='@string/app_name' android:theme='@android:style/Theme.Light'>
+        <activity android:label='@string/app_name' android:name='TaskitActivity'>
+            <intent-filter>
+                <action android:name='android.intent.action.MAIN'/>
+                <category android:name='android.intent.category.LAUNCHER'/>
+            </intent-filter>
+        </activity>
+        <activity android:name='NewTaskActivity'/>
+        <activity android:exported='false' android:name='org.ruboto.RubotoActivity'/>
+        <activity android:exported='false' android:name='org.ruboto.RubotoDialog' android:theme='@android:style/Theme.Dialog'/>
+        <service android:exported='false' android:name='org.ruboto.RubotoService'/>
+        <activity android:name='TaskActivity'/>
+    </application>
+    <uses-sdk android:minSdkVersion='10' android:targetSdkVersion='10'/>
+</manifest>
