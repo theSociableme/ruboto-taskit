@@ -10,6 +10,8 @@ java_import "android.util.Log"
 java_import "android.widget.ArrayAdapter"
 java_import "android.widget.BaseAdapter"
 java_import "java.util.ArrayList"
+java_import "android.view.LayoutInflater"
+#java_import "android.os.AsyncTask"
 
 class TaskitActivity
     TAG = "TaskitActivity"
@@ -27,10 +29,10 @@ class TaskitActivity
 
     @tasks = ArrayList.new
     @tasks.add task
-    #adapter = ArrayAdapter.new(self, Ruboto::R::layout::task_list_item)
-    #adapter.add("Test")
 
     @adapter = TaskItAdapter.new(self, @tasks)
+
+
     Log.d(TAG, "****************************************************************************")
     Log.d(TAG, "****************************************************************************")
     Log.e "TaskitActivity", "created adapter"
@@ -51,6 +53,11 @@ class TaskitActivity
     puts $!.backtrace.join("\n")
   end
 
+  def onResume
+    super
+    tip_updater = TaskFetcher.new
+    tip_updater.execute
+  end
 
   def new_task_activity
     start_ruboto_activity :class_name => "NewTaskActivity"
@@ -61,43 +68,32 @@ class TaskitActivity
   end
 
   class TaskItAdapter < android.widget.BaseAdapter
-      TAG2 = "TaskItAdapter"
+    TAG2 = "TaskItAdapter"
+    attr_accessor :context, :data
+
+    class ListItemViewTag
+      attr_accessor :title, :name, :position
+    end
 
     def initialize(context, data)
-      Log.d(TAG2, "****************************************************************************")
-      Log.d(TAG2, "****************************************************************************")
+      super()
       Log.d(TAG2, "                 Initialize       ")
-      Log.d(TAG2, "****************************************************************************")
-      Log.d(TAG2, "****************************************************************************")
       @context = context
       @data = data
     end
 
     def getCount
-      Log.d(TAG2, "****************************************************************************")
-      Log.d(TAG2, "****************************************************************************")
       Log.d(TAG2, "                 Get Count          ")
-      Log.d(TAG2, "****************************************************************************")
-      Log.d(TAG2, "****************************************************************************")
-
       @data.size
     end
 
     def getItem(position)
-      Log.d(TAG2, "****************************************************************************")
-      Log.d(TAG2, "****************************************************************************")
       Log.d(TAG2, "                 GET ITEM       ")
-      Log.d(TAG2, "****************************************************************************")
-      Log.d(TAG2, "****************************************************************************")
       @data.get(position)
     end
 
     def getItemId(position)
-      Log.d(TAG2, "****************************************************************************")
-      Log.d(TAG2, "****************************************************************************")
       Log.d(TAG2, "                 GET ITEMID           ")
-      Log.d(TAG2, "****************************************************************************")
-      Log.d(TAG2, "****************************************************************************")
       position
     end
 
@@ -106,16 +102,12 @@ class TaskitActivity
     end
 
     def getView(position, convertView, parent)
-      Log.d(TAG2, "****************************************************************************")
-      Log.d(TAG2, "****************************************************************************")
       Log.d(TAG2, "                 GET VIEW           ")
-      Log.d(TAG2, "****************************************************************************")
-      Log.d(TAG2, "****************************************************************************")
-      if convertView == null
-        convertView = LayoutInflater.from(@context).inflate(Ruboto::R::id::task_list_item, null)
+      if convertView == nil
+        convertView = LayoutInflater.from(@context).inflate(Ruboto::R::layout::task_list_item, nil)
         tag = ListItemViewTag.new
-        tag.title = convertView.findViewById(R.id.task)
-        tag.name = convertView.findViewById(R.id.assignee)
+        tag.title = convertView.findViewById(Ruboto::R::id::task)
+        tag.name = convertView.findViewById(Ruboto::R::id::assignee)
         convertView.setTag(tag)
       end
 
@@ -127,6 +119,30 @@ class TaskitActivity
       convertView
     end
 
+  end
+
+  class TaskFetcher < android.os.AsyncTask #.<java.lang.Void, java.lang.Void, java.lang.Void>
+    TAG3 = "TaskFetcher"
+
+    def initialize
+      super()
+      Log.d(TAG3, "TaskFetcher Initialize")
+      #@context = context
+    end
+
+    def onPreExecute(param)
+      Log.d(TAG3, "TaskFetcher onPreExecute")
+    end
+
+    def doInBackground(*param)
+
+      Log.d(TAG3, "TaskFetcher doInBackground")
+
+    end
+
+    def onPostExecute(param)
+      Log.d(TAG3, "TaskFetcher onPostExecute")
+    end
   end
 
 end
