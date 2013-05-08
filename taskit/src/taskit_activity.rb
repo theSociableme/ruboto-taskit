@@ -2,7 +2,7 @@ require 'ruboto/activity'
 require 'ruboto/widget'
 require 'ruboto/util/toast'
 require 'task'
-require 'person'
+require 'user'
 
 ruboto_import_widgets :Button, :LinearLayout, :RelativeLayout, :TextView, :ListView
 
@@ -22,19 +22,29 @@ java_import "org.json.JSONArray"
 
 class TaskitActivity
   TAG = "TaskitActivity"
+  attr_accessor :tasks, :users
+
+  #def self.tasks
+  #  @tasks ||= ArrayList.new
+  #end
+  #
+  #def self.users
+  #  @users ||= ArrayList.new
+  #end
+  #
+  #def self.adapter
+  #  @adapter ||= TaskItAdapter.new(self, self.tasks)
+  #end
 
   def onCreate(bundle)
     super
 
     Log.d "TaskitActivity", "in onCreate"
 
-    set_title 'Ruboto - Task It'
-
-    #task = Task.new("Hello World")
     @users = ArrayList.new
     @tasks = ArrayList.new
-    #@tasks.add task
 
+    set_title 'Ruboto - Task It'
     @adapter = TaskItAdapter.new(self, @tasks)
 
     Log.e "TaskitActivity", "created adapter"
@@ -54,7 +64,7 @@ class TaskitActivity
 
   def onResume
     super
-    task_fetcher = TaskFetcher.new
+    task_fetcher = TaskFetcher.new(@users, @tasks, @adapter)
     task_fetcher.execute
   end
 
@@ -123,8 +133,11 @@ class TaskitActivity
   class TaskFetcher < android.os.AsyncTask #.<java.lang.Void, java.lang.Void, java.lang.Void>
     TAG3 = "TaskFetcher"
 
-    def initialize
+    def initialize(users, tasks, adapter)
       super()
+      @users = users
+      @tasks = tasks
+      @adapter = adapter
       Log.d(TAG3, "TaskFetcher Initialize")
       #@context = context
     end
@@ -137,13 +150,22 @@ class TaskitActivity
 
       Log.d(TAG3, "TaskFetcher doInBackground")
       users = getJSONfromURL('http://192.168.252.129:3000/users.json')
-      users.each do |user|
-        @
+      for i in 0..(users.length() - 1)
+        user = users.getJSONObject(i)
+        Log.d(TAG3, user.toString)
+        @users.add User.new(user.getString("name"), user.getString("email_address"))
+      end
+      tasks = getJSONfromURL('http://192.168.252.129:3000/tasks.json')
+      for i in 0..(tasks.length() - 1)
+        task = tasks.getJSONObject(i)
+        Log.d(TAG3, task.toString)
+        @tasks.add Task.new(task.getString("details"))
       end
     end
 
     def onPostExecute(param)
       Log.d(TAG3, "TaskFetcher onPostExecute")
+      @adapter.notifyDataSetChanged
     end
 
     def getJSONfromURL(url)
