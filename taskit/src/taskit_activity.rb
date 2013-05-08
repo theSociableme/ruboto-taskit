@@ -11,43 +11,42 @@ java_import "android.widget.ArrayAdapter"
 java_import "android.widget.BaseAdapter"
 java_import "java.util.ArrayList"
 java_import "android.view.LayoutInflater"
-#java_import "android.os.AsyncTask"
+java_import "android.os.AsyncTask"
+java_import "org.apache.http.client.HttpClient"
+java_import "org.apache.http.impl.client.DefaultHttpClient"
+java_import "org.apache.http.client.methods.HttpGet"
+java_import "java.io.BufferedReader"
+java_import "java.lang.StringBuilder"
+java_import "java.io.InputStreamReader"
+java_import "org.json.JSONArray"
 
 class TaskitActivity
-    TAG = "TaskitActivity"
+  TAG = "TaskitActivity"
 
   def onCreate(bundle)
     super
-    Log.d(TAG, "****************************************************************************")
-    Log.d(TAG, "****************************************************************************")
+
     Log.d "TaskitActivity", "in onCreate"
-    Log.d(TAG, "****************************************************************************")
-    Log.d(TAG, "****************************************************************************")
+
     set_title 'Ruboto - Task It'
 
-    task = Task.new("Hello World")
-
+    #task = Task.new("Hello World")
+    @users = ArrayList.new
     @tasks = ArrayList.new
-    @tasks.add task
+    #@tasks.add task
 
     @adapter = TaskItAdapter.new(self, @tasks)
 
-
-    Log.d(TAG, "****************************************************************************")
-    Log.d(TAG, "****************************************************************************")
     Log.e "TaskitActivity", "created adapter"
-    Log.d(TAG, "****************************************************************************")
-    Log.d(TAG, "****************************************************************************")
+
     self.setContentView(Ruboto::R::layout::task_list)
     new_task_button = findViewById(Ruboto::R::id::new_task_button)
-    @task_list = findViewById(Ruboto::R::id::task_list)
+    @task_list      = findViewById(Ruboto::R::id::task_list)
     @task_list.set_adapter(@adapter)
     new_task_button.on_click_listener = proc { |view| new_task_activity }
-    Log.d(TAG, "****************************************************************************")
-    Log.d(TAG, "****************************************************************************")
+
     Log.e "TaskitActivity", "finished onCreate"
-    Log.d(TAG, "****************************************************************************")
-    Log.d(TAG, "****************************************************************************")
+
   rescue
     puts "Exception creating activity: #{$!}"
     puts $!.backtrace.join("\n")
@@ -55,8 +54,8 @@ class TaskitActivity
 
   def onResume
     super
-    tip_updater = TaskFetcher.new
-    tip_updater.execute
+    task_fetcher = TaskFetcher.new
+    task_fetcher.execute
   end
 
   def new_task_activity
@@ -79,7 +78,7 @@ class TaskitActivity
       super()
       Log.d(TAG2, "                 Initialize       ")
       @context = context
-      @data = data
+      @data    = data
     end
 
     def getCount
@@ -105,14 +104,14 @@ class TaskitActivity
       Log.d(TAG2, "                 GET VIEW           ")
       if convertView == nil
         convertView = LayoutInflater.from(@context).inflate(Ruboto::R::layout::task_list_item, nil)
-        tag = ListItemViewTag.new
-        tag.title = convertView.findViewById(Ruboto::R::id::task)
-        tag.name = convertView.findViewById(Ruboto::R::id::assignee)
+        tag         = ListItemViewTag.new
+        tag.title   = convertView.findViewById(Ruboto::R::id::task)
+        tag.name    = convertView.findViewById(Ruboto::R::id::assignee)
         convertView.setTag(tag)
       end
 
       task = getItem(position)
-      tag = convertView.getTag()
+      tag  = convertView.getTag()
 
       tag.title.setText(task.description)
 
@@ -137,12 +136,53 @@ class TaskitActivity
     def doInBackground(*param)
 
       Log.d(TAG3, "TaskFetcher doInBackground")
-
+      users = getJSONfromURL('http://192.168.252.129:3000/users.json')
+      users.each do |user|
+        @
+      end
     end
 
     def onPostExecute(param)
       Log.d(TAG3, "TaskFetcher onPostExecute")
     end
-  end
 
+    def getJSONfromURL(url)
+
+
+      #begin
+        httpclient = DefaultHttpClient.new()
+        httpget   = HttpGet.new(url)
+        response   = httpclient.execute(httpget)
+        entity     = response.getEntity()
+        is         = entity.getContent()
+
+      #rescue
+      #  Log.e("log_tag", "Error in http connection ")
+      #end
+
+      #begin
+        reader = BufferedReader.new(InputStreamReader.new(is, "iso-8859-1"), 8)
+        sb     = StringBuilder.new()
+        line   = nil
+        while ((line = reader.readLine()) != nil)
+          sb.append(line + "\n")
+        end
+        is.close()
+        result=sb.toString()
+      #rescue
+      #  Log.e("log_tag", "Error converting result ")
+      #end
+
+      #try parse the string to a JSON object
+      #begin
+        jArray = JSONArray.new(result)
+      #rescue
+      #  Log.e("log_tag", "Error parsing data ")
+      #end
+
+      jArray
+
+    end
+  end
 end
+
