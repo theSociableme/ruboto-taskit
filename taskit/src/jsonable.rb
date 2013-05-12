@@ -4,9 +4,9 @@ class JSONable
   def to_json
     hash = {}
     self.instance_variables.each do |var|
-      hash[var] = self.instance_variable_get var
+      hash[var.to_s.gsub('@','').to_sym] = self.instance_variable_get var
     end
-    hash.to_json
+    {self.class.name.downcase => hash}.to_json
   end
   def from_json! string
     JSON.load(string).each do |var, val|

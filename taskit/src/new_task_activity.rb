@@ -3,7 +3,7 @@ require 'ruboto/util/toast'
 require 'user'
 require 'task'
 require 'multi_json'
-require 'httparty'
+require 'net/http'
 
 ruboto_import_widgets :Button, :LinearLayout, :TextView, :EditText, :Spinner, :SpinnerAdapter
 
@@ -15,7 +15,8 @@ class NewTaskActivity
     set_title 'New Task'
     Log.e 'USERS', $users.to_string
 
-    @new_task = Task.new(nil, nil, nil)
+    @new_task = Task.new(nil, nil, nil, nil)
+    @new_task.user_id = $users.get(0).id
 
     @adapter = UserSpinner.new(self, $users)
     self.content_view =
@@ -33,20 +34,25 @@ class NewTaskActivity
     puts $!.backtrace.join("\n")
   end
 
+  def task_submitted
+    finish()
+  end
+
   private
 
 
   def submit_new_task
     toast 'Submitting'
 
-
     @new_task.name = @task_name.get_text.to_string
-    @new_task.description = @task_details.get_text.to_string
+    @new_task.details = @task_details.get_text.to_string
 
-    task_submitter = TaskSubmitter.new(@new_task)
+    task_submitter = TaskSubmitter.new(self, @new_task)
     task_submitter.execute
 
   end
+
+
 
   class ItemSelectedListener
     def initialize(activity, new_task)
@@ -137,8 +143,9 @@ class NewTaskActivity
   class TaskSubmitter < android.os.AsyncTask
     TAG3 = 'TaskFetcher'
 
-    def initialize(new_task)
+    def initialize(context, new_task)
       super()
+      @context = context
       @new_task = new_task
       Log.d TAG3, 'Initialize'
     end
@@ -149,22 +156,18 @@ class NewTaskActivity
 
       Log.e "NEW TASK JSON", @new_task.to_json
 
-      HTTParty.post('http://192.168.252.129:3000/tasks',
-                    :body => @new_task.to_json,
-                    :headers => { 'Content-Type' => 'application/json' } )
+      req = Net::HTTP::Post.new('/tasks', initheader = { 'Content-Type' => 'application/json' } )
+      req.body = @new_task.to_json
+      response = Net::HTTP.new('192.168.252.129','3000').start {|http| http.request(req) }
 
-      #httpclient = DefaultHttpClient.new()
-      #httppost   = HttpPost.new('http://192.168.252.129:3000/tasks')
-      #httppost.setEntity(@new_task.to_json)
-      #
-      #httppost.setHeader("Accept", "application/json")
-      #httppost.setHeader("Content-type", "application/json")
-      #response   = httpclient.execute(httppost)
+      Log.e "Response", response.inspect
+      response
     end
 
     def onPostExecute(param)
       Log.d TAG3, 'onPostExecute'
 
+      @context.task_submitted
     end
 
   end

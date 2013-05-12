@@ -68,12 +68,25 @@ class TaskitActivity
 
   end
 
+  def get_user_by_id(id)
+    for i in 0..(@users.length() - 1)
+      Log.d "getUserById", "Looking for id: " + id.to_s + "   Checking index: " + i.to_s
+      user_id = @users.get(i).id
+      Log.d "getUserById", "User Id is " + user_id.to_s
+      if user_id == id
+        return @users.get(i)
+      end
+    end
+    nil
+  end
+
+
   class TaskItAdapter < BaseAdapter
     TAG2 = "TaskItAdapter"
     attr_accessor :context, :data
 
     class ListItemViewTag
-      attr_accessor :title, :name, :position
+      attr_accessor :task_name, :task_description, :position, :user_name
     end
 
     def initialize(context, data)
@@ -107,15 +120,21 @@ class TaskitActivity
       if convertView == nil
         convertView = LayoutInflater.from(@context).inflate(Ruboto::R::layout::task_list_item, nil)
         tag         = ListItemViewTag.new
-        tag.title   = convertView.find_view_by_id(Ruboto::R::id::task)
-        tag.name    = convertView.find_view_by_id(Ruboto::R::id::assignee)
+        tag.task_name   = convertView.find_view_by_id(Ruboto::R::id::task_name)
+        tag.task_description   = convertView.find_view_by_id(Ruboto::R::id::task_description)
+        tag.user_name    = convertView.find_view_by_id(Ruboto::R::id::assignee)
         convertView.set_tag(tag)
       end
 
       task = get_item(position)
       tag  = convertView.get_tag
 
-      tag.title.set_text(task.description)
+      tag.task_name.set_text(task.name)
+      tag.task_description.set_text(task.details)
+      user = @context.get_user_by_id(task.user_id)
+      if user
+        tag.user_name.set_text(user.name)
+      end
 
       convertView
     end
@@ -143,27 +162,23 @@ class TaskitActivity
       Log.d TAG3, 'doInBackground'
       users = get_json_from_url('http://192.168.252.129:3000/users.json')
       @users.clear
-      users.each do |user|
-        @users.add User.new( user['id'], user['name'], user['email_address'] )
+      if users
+        users.each do |user|
+          @users.add User.new( user['id'], user['name'], user['email_address'] )
+        end
       end
 
-      #for i in 0..(users.length() - 1)
-      #  user = users.get_json_object(i)
-      #  Log.d TAG3, user.to_string
-      #  @users.add User.new(user.get_string('name'), user.get_string('email_address'))
-      #end
+
       tasks = get_json_from_url('http://192.168.252.129:3000/tasks.json')
       @tasks.clear
-      tasks.each do |task|
-        @tasks.add Task.new(task['id'], task['name'], task['details'])
+      if tasks
+        tasks.each do |task|
+          new_task = Task.new(task['id'], task['name'], task['details'], task['user_id'])
+          Log.e "Adding Task", new_task.inspect
+          @tasks.add new_task
+        end
       end
 
-
-      #for i in 0..(tasks.length() - 1)
-      #  task = tasks.get_json_object(i)
-      #  Log.d TAG3, task.to_string
-      #  @tasks.add Task.new(task.get_string('details'))
-      #end
     end
 
     def onPostExecute(param)
@@ -201,6 +216,7 @@ class TaskitActivity
       #try parse the string to a JSON object
       begin
         json_array = MultiJson.decode(result)
+        Log.e "Parsed Json", json_array.to_s
       rescue
         Log.e 'Parse Error', 'Error parsing data'
       end
