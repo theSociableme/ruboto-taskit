@@ -1,7 +1,9 @@
-class Task
-  attr_accessor :description, :completed
+class Task < JSONable
+  attr_accessor :id, :name, :description, :completed, :user_id
 
-  def initialize(description)
+  def initialize(id, name, description)
+    @id = id
+    @name = name
     @description = description
     @completed = false
   end

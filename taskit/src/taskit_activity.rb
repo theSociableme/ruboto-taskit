@@ -1,14 +1,16 @@
 require 'ruboto/activity'
 require 'ruboto/widget'
 require 'ruboto/util/toast'
+require 'jsonable'
 require 'task'
 require 'user'
+require 'multi_json'
 
-ruboto_import_widgets :Button, :LinearLayout, :RelativeLayout, :TextView, :ListView
+
+ruboto_import_widgets :Button, :LinearLayout, :RelativeLayout, :TextView, :ListView, :ArrayAdapter, :BaseAdapter
 
 java_import 'android.util.Log'
-java_import 'android.widget.ArrayAdapter'
-java_import 'android.widget.BaseAdapter'
+
 java_import 'java.util.ArrayList'
 java_import 'android.view.LayoutInflater'
 java_import 'android.os.AsyncTask'
@@ -27,7 +29,7 @@ class TaskitActivity
 
   def on_create(bundle)
     super
-
+    set_title 'Ruboto Taskit'
     Log.d TAG, "in onCreate"
 
     @users = ArrayList.new
@@ -58,6 +60,7 @@ class TaskitActivity
   end
 
   def new_task_activity
+    $users = @users
     start_ruboto_activity :class_name => "NewTaskActivity"
   end
 
@@ -65,7 +68,7 @@ class TaskitActivity
 
   end
 
-  class TaskItAdapter < android.widget.BaseAdapter
+  class TaskItAdapter < BaseAdapter
     TAG2 = "TaskItAdapter"
     attr_accessor :context, :data
 
@@ -75,23 +78,23 @@ class TaskitActivity
 
     def initialize(context, data)
       super()
-      Log.d(TAG2, "                 Initialize       ")
+      Log.d TAG2, 'Initialize'
       @context = context
       @data    = data
     end
 
     def getCount
-      Log.d(TAG2, "                 Get Count          ")
+      Log.d TAG2, 'Get Count'
       @data.size
     end
 
     def getItem(position)
-      Log.d(TAG2, "                 GET ITEM       ")
+      Log.d TAG2, 'GET ITEM'
       @data.get(position)
     end
 
     def getItemId(position)
-      Log.d(TAG2, "                 GET ITEMID           ")
+      Log.d TAG2, 'GET ITEMID'
       position
     end
 
@@ -100,7 +103,7 @@ class TaskitActivity
     end
 
     def getView(position, convertView, parent)
-      Log.d(TAG2, "                 GET VIEW           ")
+      Log.d TAG2, 'GET VIEW'
       if convertView == nil
         convertView = LayoutInflater.from(@context).inflate(Ruboto::R::layout::task_list_item, nil)
         tag         = ListItemViewTag.new
@@ -120,39 +123,51 @@ class TaskitActivity
   end
 
   class TaskFetcher < android.os.AsyncTask #.<java.lang.Void, java.lang.Void, java.lang.Void>
-    TAG3 = "TaskFetcher"
+    TAG3 = 'TaskFetcher'
 
     def initialize(users, tasks, adapter)
       super()
       @users = users
       @tasks = tasks
       @adapter = adapter
-      Log.d(TAG3, "TaskFetcher Initialize")
+      Log.d TAG3, 'Initialize'
     end
 
     def onPreExecute(param)
-      Log.d(TAG3, "TaskFetcher onPreExecute")
+      toast 'Loading....'
+      Log.d TAG3, 'onPreExecute'
     end
 
     def doInBackground(*param)
 
-      Log.d(TAG3, "TaskFetcher doInBackground")
-      users = json_from_url('http://192.168.252.129:3000/users.json')
-      for i in 0..(users.length() - 1)
-        user = users.get_json_object(i)
-        Log.d(TAG3, user.to_string)
-        @users.add User.new(user.get_string("name"), user.get_string("email_address"))
+      Log.d TAG3, 'doInBackground'
+      users = get_json_from_url('http://192.168.252.129:3000/users.json')
+      @users.clear
+      users.each do |user|
+        @users.add User.new( user['id'], user['name'], user['email_address'] )
       end
-      tasks = json_from_url('http://192.168.252.129:3000/tasks.json')
-      for i in 0..(tasks.length() - 1)
-        task = tasks.get_json_object(i)
-        Log.d(TAG3, task.to_string)
-        @tasks.add Task.new(task.get_string("details"))
+
+      #for i in 0..(users.length() - 1)
+      #  user = users.get_json_object(i)
+      #  Log.d TAG3, user.to_string
+      #  @users.add User.new(user.get_string('name'), user.get_string('email_address'))
+      #end
+      tasks = get_json_from_url('http://192.168.252.129:3000/tasks.json')
+      @tasks.clear
+      tasks.each do |task|
+        @tasks.add Task.new(task['id'], task['name'], task['details'])
       end
+
+
+      #for i in 0..(tasks.length() - 1)
+      #  task = tasks.get_json_object(i)
+      #  Log.d TAG3, task.to_string
+      #  @tasks.add Task.new(task.get_string('details'))
+      #end
     end
 
     def onPostExecute(param)
-      Log.d(TAG3, "TaskFetcher onPostExecute")
+      Log.d TAG3, 'onPostExecute'
       @adapter.notify_data_set_changed
     end
 
@@ -167,7 +182,7 @@ class TaskitActivity
         is         = entity.content
 
       rescue
-        Log.e("log_tag", "Error in http connection ")
+        Log.e 'Network Error', 'Error in http connection'
       end
 
       begin
@@ -180,17 +195,17 @@ class TaskitActivity
         is.close
         result=sb.to_string
       rescue
-        Log.e("log_tag", "Error converting result ")
+        Log.e 'Data Error', 'Error converting result'
       end
 
       #try parse the string to a JSON object
       begin
-        jArray = JSONArray.new(result)
+        json_array = MultiJson.decode(result)
       rescue
-        Log.e("log_tag", "Error parsing data ")
+        Log.e 'Parse Error', 'Error parsing data'
       end
 
-      jArray
+      json_array
 
     end
   end

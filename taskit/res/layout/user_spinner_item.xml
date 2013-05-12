@@ -1,0 +1,12 @@
+  <TextView xmlns:android="http://schemas.android.com/apk/res/android"
+          android:id="@+id/name"
+          android:layout_width="match_parent"
+          android:layout_height="40dip"
+          android:layout_toRightOf="@+id/image_new"
+          android:gravity="center_vertical"
+          android:textSize="15sp"
+          android:paddingLeft="10dip"
+          android:layout_marginLeft="5dip"
+          android:paddingTop="2dip"
+          android:text="Task"
+          />
